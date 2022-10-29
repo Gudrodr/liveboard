@@ -1,26 +1,31 @@
-import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import styled from 'styled-components';
+import { Toolbar } from './toolbar/Toolbar';
+import { Canvas } from './canvas/Canvas';
+import 'normalize.css';
+import { useState } from 'react';
+
+export interface ActionObject {
+  currentAction: 'square' | 'circle' | 'clear' | undefined
+}
 
 function App() {
+  const [state, setState] = useState<ActionObject>({
+    currentAction: undefined
+  });
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppBody className="App">
+      <Toolbar updateAction={setState} />
+      <Canvas { ...state } />
+    </AppBody>
   );
 }
+
+const AppBody = styled.div`
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+`;
 
 export default App;
