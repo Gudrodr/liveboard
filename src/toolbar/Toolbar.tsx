@@ -20,6 +20,9 @@ export const Toolbar = (props: Props) => {
             <CircleSticker onClick={createCircleSticker} />
             <SquareSticker onClick={createSquareSticker} />
             <DeleteButton onClick={clearCanvas} />
+            {
+                // to do text and drawing
+            }
         </ToolbarBody>
     )
 }

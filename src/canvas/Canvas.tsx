@@ -1,49 +1,82 @@
+import { Application, FederatedMouseEvent, FederatedWheelEvent, ICanvas } from 'pixi.js';
 import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { ActionObject } from '../App';
+import { getCircle, getRectangle } from './shapes';
 
 export const Canvas = (props: ActionObject) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    const draw = (figure: 'square' | 'circle') => {
-        const canvas = canvasRef.current;
-        const context = canvas?.getContext('2d');
-        if (!context) return;
-        context.beginPath();
-        if (figure === 'circle') {
-            context.arc(100, 75, 50, 0, 2 * Math.PI);
-        } else {
-            context.rect(20, 20, 150, 100);
-        }
-        context.stroke();
-    }
-
-    const clear = () => {
-        const canvas = canvasRef.current;
-        const context = canvas?.getContext('2d');
-        if (!context) return;
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-    }
+    const isPanning = useRef(false);
+    const scale = useRef(1);
+    const canvasRef = useRef<HTMLDivElement>(null);
+    const pixiRef = useRef<Application<ICanvas>>();
+    const coords = useRef({x: 0, y: 0});
+    const stageLastPosition = useRef({x: 0, y: 0});
 
     useEffect(() => {
         switch(props.currentAction) {
             case 'circle':
-                draw(props.currentAction);
+                pixiRef.current?.stage.addChild(getCircle());
                 break;
             case 'square':
-                draw(props.currentAction);
+                pixiRef.current?.stage.addChild(getRectangle());
                 break;
             case 'clear':
-                clear();
+                pixiRef.current?.stage.removeChildren();
                 break;
-            default: return;
+            default:
+                return;
         }
     }, [props.currentAction]);
 
+    useEffect(() => {
+        pixiRef.current = new Application({
+            width: window.innerWidth - 3 * 16,
+            height: window.innerHeight,
+            backgroundColor: 'lightgray',
+        });
+        // @ts-ignore
+        pixiRef.current.view.addEventListener('wheel', (event: FederatedWheelEvent) => {
+            //@ts-ignore
+            const amount = event.wheelDelta > 0 ?  1.035 : 1 / 1.035;
+            scale.current = scale.current * amount;
+            pixiRef.current!.stage.scale.x = scale.current;
+            pixiRef.current!.stage.scale.y = scale.current;
+            console.log(event);
+            pixiRef.current!.stage.position.x = pixiRef.current!.stage.position.x - event.deltaX;
+            pixiRef.current!.stage.position.y = pixiRef.current!.stage.position.y - event.deltaY;
+            // pixiRef.current!.stage.position.x = -(event.x * scale.current) + event.x;
+            // pixiRef.current!.stage.position.y = -(event.y * scale.current) + event.y;
+        });
+
+        // @ts-ignore
+        pixiRef.current.view.addEventListener!('mousedown', (event: FederatedMouseEvent) => {
+            isPanning.current = true;
+            coords.current = { x: event.x, y: event.y };
+            stageLastPosition.current = { x: pixiRef.current!.stage.position.x, y: pixiRef.current!.stage.position.y };
+        });
+        // @ts-ignore
+        pixiRef.current.view.addEventListener!('mousemove', (event: FederatedMouseEvent) => {
+            if(isPanning.current) {
+                const { x, y } = stageLastPosition.current;
+                pixiRef.current!.stage.position.x = x + (event.x - coords.current.x);
+                pixiRef.current!.stage.position.y = y + (event.y - coords.current.y);
+            }
+        });
+        // @ts-ignore
+        pixiRef.current.view.addEventListener!('mouseup', (event: FederatedMouseEvent) => {
+            isPanning.current = false;
+        });
+
+        canvasRef.current?.appendChild(pixiRef.current.view as any);
+        pixiRef.current.start();
+
+        return () => {
+            pixiRef.current?.destroy(true, true);
+        }
+    }, []);
+
     return (
-        <CanvasBody>
-            <canvas style={{ width: '700px' }} ref={canvasRef} />
-        </CanvasBody>
+        <CanvasBody ref={canvasRef} />
     )
 }
 
