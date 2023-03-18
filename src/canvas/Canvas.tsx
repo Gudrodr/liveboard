@@ -36,22 +36,25 @@ export const Canvas = (props: ActionObject) => {
         });
         // @ts-ignore
         pixiRef.current.view.addEventListener('wheel', (event: FederatedWheelEvent) => {
+
             //@ts-ignore
-            const amount = event.wheelDelta > 0 ?  1.035 : 1 / 1.035;
-            scale.current = scale.current * amount;
-            pixiRef.current!.stage.scale.x = scale.current;
-            pixiRef.current!.stage.scale.y = scale.current;
-            console.log(event);
-            pixiRef.current!.stage.position.x = pixiRef.current!.stage.position.x - event.deltaX;
-            pixiRef.current!.stage.position.y = pixiRef.current!.stage.position.y - event.deltaY;
-            // pixiRef.current!.stage.position.x = -(event.x * scale.current) + event.x;
-            // pixiRef.current!.stage.position.y = -(event.y * scale.current) + event.y;
+            // const amount = event.wheelDelta > 0 ?  1.035 : 1 / 1.035;
+            // scale.current = scale.current * amount;
+            // pixiRef.current!.stage.scale.x = scale.current;
+            // pixiRef.current!.stage.scale.y = scale.current;
+            // console.log('wheel --->', event);
+            // const newX = -(event.offsetX * scale.current) + event.x;
+            // const newY = -(event.offsetY * scale.current) + event.y;
+
+            // pixiRef.current!.stage.position.x = newX;
+            // pixiRef.current!.stage.position.y = newY;
         });
 
         // @ts-ignore
         pixiRef.current.view.addEventListener!('mousedown', (event: FederatedMouseEvent) => {
             isPanning.current = true;
             coords.current = { x: event.x, y: event.y };
+            console.log('click ---->', event);
             stageLastPosition.current = { x: pixiRef.current!.stage.position.x, y: pixiRef.current!.stage.position.y };
         });
         // @ts-ignore

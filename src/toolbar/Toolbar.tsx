@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { ActionObject } from '../App';
 
@@ -8,18 +8,29 @@ interface Props {
 
 export const Toolbar = (props: Props) => {
     const { updateAction } = props;
+    const [coords, setCoords] = useState({x: 0, y: 0});
 
     const createCircleSticker = useCallback(() => updateAction({ currentAction: 'circle' }), [updateAction]);
 
     const createSquareSticker = useCallback(() => updateAction({ currentAction: 'square' }), [updateAction]);
 
     const clearCanvas = useCallback(() => updateAction({ currentAction: 'clear' }), [updateAction]);
+
+    useEffect(() => {
+        document.addEventListener('mousemove', (e) => {
+            setCoords({ x: e.x, y: e.y });
+        })
+    }, []);
     
     return (
         <ToolbarBody>
             <CircleSticker onClick={createCircleSticker} />
             <SquareSticker onClick={createSquareSticker} />
             <DeleteButton onClick={clearCanvas} />
+            <div>
+                {coords.x}<br/>
+                {coords.y}
+            </div>
             {
                 // to do text and drawing
             }
