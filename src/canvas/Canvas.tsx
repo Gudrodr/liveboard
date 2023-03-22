@@ -1,24 +1,27 @@
 import { Application, FederatedMouseEvent, FederatedWheelEvent, ICanvas } from 'pixi.js';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ActionObject } from '../App';
 import { getCircle, getRectangle } from './shapes';
 
 export const Canvas = (props: ActionObject) => {
+    const isDragging = useRef(false);
     const isPanning = useRef(false);
     const scale = useRef(1);
     const canvasRef = useRef<HTMLDivElement>(null);
     const pixiRef = useRef<Application<ICanvas>>();
-    const coords = useRef({x: 0, y: 0});
-    const stageLastPosition = useRef({x: 0, y: 0});
+    const coords = useRef({ x: 0, y: 0 });
+    const stageLastPosition = useRef({ x: 0, y: 0 });
+
+    const setIsDragging = (value: boolean) => isDragging.current = value;
 
     useEffect(() => {
-        switch(props.currentAction) {
+        switch (props.currentAction) {
             case 'circle':
-                pixiRef.current?.stage.addChild(getCircle());
+                pixiRef.current?.stage.addChild(getCircle(setIsDragging));
                 break;
             case 'square':
-                pixiRef.current?.stage.addChild(getRectangle());
+                pixiRef.current?.stage.addChild(getRectangle(setIsDragging));
                 break;
             case 'clear':
                 pixiRef.current?.stage.removeChildren();
@@ -52,14 +55,16 @@ export const Canvas = (props: ActionObject) => {
 
         // @ts-ignore
         pixiRef.current.view.addEventListener!('mousedown', (event: FederatedMouseEvent) => {
-            isPanning.current = true;
-            coords.current = { x: event.x, y: event.y };
-            console.log('click ---->', event);
-            stageLastPosition.current = { x: pixiRef.current!.stage.position.x, y: pixiRef.current!.stage.position.y };
+            if (!isDragging.current) {
+                isPanning.current = true;
+                coords.current = { x: event.x, y: event.y };
+                console.log('click ---->', event);
+                stageLastPosition.current = { x: pixiRef.current!.stage.position.x, y: pixiRef.current!.stage.position.y };
+            }
         });
         // @ts-ignore
         pixiRef.current.view.addEventListener!('mousemove', (event: FederatedMouseEvent) => {
-            if(isPanning.current) {
+            if (isPanning.current) {
                 const { x, y } = stageLastPosition.current;
                 pixiRef.current!.stage.position.x = x + (event.x - coords.current.x);
                 pixiRef.current!.stage.position.y = y + (event.y - coords.current.y);
