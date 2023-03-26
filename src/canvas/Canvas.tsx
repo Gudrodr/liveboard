@@ -1,30 +1,36 @@
-import { Application, FederatedMouseEvent, FederatedWheelEvent, ICanvas } from 'pixi.js';
-import { useEffect, useRef, useState } from 'react';
+import { Application, DisplayObject, EventBoundary, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, Graphics, ICanvas } from 'pixi.js';
+import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { v4 } from 'uuid';
 import { ActionObject } from '../App';
 import { getCircle, getRectangle } from './shapes';
 
+export type Shape = Graphics & { id?: string };
+type DisplayObjectWithId = DisplayObject & { id?: string }
+
 export const Canvas = (props: ActionObject) => {
-    const isDragging = useRef(false);
     const isPanning = useRef(false);
-    const scale = useRef(1);
     const canvasRef = useRef<HTMLDivElement>(null);
     const pixiRef = useRef<Application<ICanvas>>();
     const coords = useRef({ x: 0, y: 0 });
     const stageLastPosition = useRef({ x: 0, y: 0 });
-
-    const setIsDragging = (value: boolean) => isDragging.current = value;
+    const selectedShape = useRef<DisplayObjectWithId | undefined>(undefined);
 
     useEffect(() => {
         switch (props.currentAction) {
             case 'circle':
-                pixiRef.current?.stage.addChild(getCircle(setIsDragging));
+                pixiRef.current?.stage.addChild(getCircle(v4()));
                 break;
             case 'square':
-                pixiRef.current?.stage.addChild(getRectangle(setIsDragging));
+                pixiRef.current?.stage.addChild(getRectangle(v4()));
                 break;
             case 'clear':
-                pixiRef.current?.stage.removeChildren();
+                if (selectedShape.current) {
+                    pixiRef.current?.stage.removeChild(selectedShape.current);
+                    selectedShape.current = undefined;
+                } else {
+                    pixiRef.current?.stage.removeChildren();
+                }
                 break;
             default:
                 return;
@@ -37,6 +43,7 @@ export const Canvas = (props: ActionObject) => {
             height: window.innerHeight,
             backgroundColor: 'lightgray',
         });
+        const boundary = new EventBoundary(pixiRef.current?.stage);
         // @ts-ignore
         pixiRef.current.view.addEventListener('wheel', (event: FederatedWheelEvent) => {
 
@@ -54,18 +61,33 @@ export const Canvas = (props: ActionObject) => {
         });
 
         // @ts-ignore
-        pixiRef.current.view.addEventListener!('mousedown', (event: FederatedMouseEvent) => {
-            if (!isDragging.current) {
+        pixiRef.current.view.addEventListener!('mousedown', (event: FederatedPointerEvent) => {
+            const graphics: Shape | null = boundary.hitTest(event.offsetX, event.offsetY) as Shape;
+            if (!graphics) {
+                if (selectedShape.current) {
+                    //@ts-ignore
+                    pixiRef.current?.stage.children.find(item => item.id === selectedShape.current?.id).emit('unselect');
+                    selectedShape.current = undefined;
+                }
+                const { position } = pixiRef.current!.stage;
                 isPanning.current = true;
                 coords.current = { x: event.x, y: event.y };
-                console.log('click ---->', event);
-                stageLastPosition.current = { x: pixiRef.current!.stage.position.x, y: pixiRef.current!.stage.position.y };
+                stageLastPosition.current = { x: position.x, y: position.y };
+            } else {
+                //@ts-ignore
+                graphics.emit('select');
+                if (selectedShape.current && graphics.id !== selectedShape.current.id) {
+                    //@ts-ignore
+                    pixiRef.current?.stage.children.find(item => item.id === selectedShape.current?.id).emit('unselect');
+                }
+                selectedShape.current = graphics;
             }
         });
         // @ts-ignore
         pixiRef.current.view.addEventListener!('mousemove', (event: FederatedMouseEvent) => {
             if (isPanning.current) {
                 const { x, y } = stageLastPosition.current;
+                console.log(x, y)
                 pixiRef.current!.stage.position.x = x + (event.x - coords.current.x);
                 pixiRef.current!.stage.position.y = y + (event.y - coords.current.y);
             }

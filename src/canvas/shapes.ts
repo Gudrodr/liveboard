@@ -1,81 +1,111 @@
 import { Graphics } from "pixi.js";
+import { Shape } from "./Canvas";
 
-export const getCircle = (cb: (value: boolean) => void) => {
-    const gr = new Graphics();
-    gr.beginFill(0xffffff);
-    gr.drawCircle(150, 150, 30);
-    gr.endFill();
-    gr.interactive = true;
+const defaultBackgroundColor = 0xffffff;
+const selectedBackgroundColor = 0xFFA3A3A3;
+
+export const getCircle = (id: string) => {
+    let coords = { x: 150, y: 150 };
+    const outline: Shape = new Graphics();
+    outline.lineStyle(1, selectedBackgroundColor);
+    outline.drawCircle(coords.x, coords.y, 30);
+    const circle: Shape = new Graphics();
+    circle.id = id;
+    circle.beginFill(defaultBackgroundColor);
+    circle.drawCircle(coords.x, coords.y, 30);
+    circle.endFill();
+    circle.interactive = true;
 
     let isDragging = false;
+    let isSelected = false;
     let dragStart = { x: 0, y: 0 };
     let dragEnd = { x: 0, y: 0 };
 
-    gr.interactive = true;
-    gr.on('mousedown', (event) => {
-        console.log(event);
-        gr.lineStyle(2, 0xFF0000);
+    circle.interactive = true;
+    circle.on('mousedown', (event) => {
         isDragging = true;
         dragStart = event.global.clone();
-        cb(isDragging);
     });
+    // @ts-ignore
+    circle.on('select', () => {
+        isSelected = true;
+        circle.addChild(outline);
+    })
+    // @ts-ignore
+    circle.on('unselect', () => {
+        isSelected = false;
+        circle.removeChildren();
+    })
 
-    gr.on('mousemove', (event) => {
+    circle.on('mousemove', (event) => {
         if (isDragging) {
             dragEnd = event.global.clone();
             const dragDelta = { x: dragEnd.x - dragStart.x, y: dragEnd.y - dragStart.y };
-            gr.x += dragDelta.x;
-            gr.y += dragDelta.y;
+            circle.x += dragDelta.x;
+            circle.y += dragDelta.y;
+            coords.x += dragDelta.x;
+            coords.y += dragDelta.y;
             dragStart = dragEnd;
         }
     });
 
-    gr.on('mouseup', () => {
+    circle.on('mouseup', () => {
         isDragging = false;
-        cb(isDragging);
     });
-    gr.on('mouseupoutside', () => {
+    circle.on('mouseupoutside', () => {
         isDragging = false;
-        cb(isDragging);
     });
-    return gr;
+    return circle;
 }
 
-export const getRectangle = (cb: (value: boolean) => void) => {
-    const gr = new Graphics();
-    gr.beginFill(0xffffff);
-    gr.drawRect(500, 400, 60, 60);
-    gr.endFill();
-    gr.interactive = true;
+export const getRectangle = (id: string) => {
+    let coords = { x: 500, y: 400 };
+    const square: Shape = new Graphics();
+    const outline: Shape = new Graphics();
+    outline.lineStyle(1, selectedBackgroundColor);
+    outline.drawRect(coords.x, coords.y, 60, 60);
+    square.id = id;
+    square.beginFill(defaultBackgroundColor);
+    square.drawRect(coords.x, coords.y, 60, 60);
+    square.endFill();
+    square.interactive = true;
 
     let isDragging = false;
+    let isSelected = false;
     let dragStart = { x: 0, y: 0 };
     let dragEnd = { x: 0, y: 0 };
 
-    gr.interactive = true;
-    gr.on('mousedown', (event) => {
+    square.interactive = true;
+    // @ts-ignore
+    square.on('select', () => {
+        isSelected = true;
+        square.addChild(outline);
+    })
+    // @ts-ignore
+    square.on('unselect', () => {
+        isSelected = false;
+        square.removeChildren();
+    })
+    square.on('mousedown', (event) => {
         isDragging = true;
         dragStart = event.global.clone();
-        cb(isDragging);
     });
 
-    gr.on('mousemove', (event) => {
+    square.on('mousemove', (event) => {
         if (isDragging) {
             dragEnd = event.global.clone();
             const dragDelta = { x: dragEnd.x - dragStart.x, y: dragEnd.y - dragStart.y };
-            gr.x += dragDelta.x;
-            gr.y += dragDelta.y;
+            square.x += dragDelta.x;
+            square.y += dragDelta.y;
             dragStart = dragEnd;
         }
     });
 
-    gr.on('mouseup', () => {
+    square.on('mouseup', () => {
         isDragging = false;
-        cb(isDragging);
     });
-    gr.on('mouseupoutside', () => {
+    square.on('mouseupoutside', () => {
         isDragging = false;
-        cb(isDragging);
     });
-    return gr;
+    return square;
 }
